@@ -514,7 +514,7 @@ def _make_inplace(fn):
 
     inplace_name = f"{fn.__name__}_"
     _fn.__name__ = inplace_name
-    _fn = register_decomposition(getattr(aten, inplace_name))(_fn)
+    _fn = register_decomposition(getattr(aten, inplace_name))(_fn)  # type: ignore[assignment]
 
     # We access the __all__ attribute of the module where fn is defined
     # There may be a cleaner way of doing this...
@@ -991,7 +991,7 @@ def view_as_complex(self: TensorLikeType) -> TensorLikeType:
     )
     dims = old_strides[:-1]
     torch._check(
-        py_all(stride % 2 == 0 for stride in dims),
+        builtins.all(stride % 2 == 0 for stride in dims),
         lambda: "Tensor must have a stride divisible by 2 for all but last dimension",
     )
     torch._check(
@@ -2166,7 +2166,7 @@ def _reduction(
         dims = (dims,)  # type: ignore[assignment]
     dims = utils.reduction_dims(a.shape, dims)
     if not has_identity:
-        valid_shape = a.ndim == 0 or py_all(a.shape[i] for i in dims)
+        valid_shape = a.ndim == 0 or builtins.all(a.shape[i] for i in dims)
         if not valid_shape:
             raise RuntimeError(
                 "reducing over zero-size dimension for reduction operation without identity"
@@ -2215,10 +2215,6 @@ def _make_copy_from_view(fn):
     return _fn
 
 
-# Saves Python all
-py_all = all
-
-
 @register_decomposition(aten.all)
 @out_wrapper()
 def all(
@@ -2232,10 +2228,6 @@ def all(
         result = result.to(dtype=torch.uint8)
 
     return result
-
-
-# Saves Python any
-py_any = any
 
 
 @register_decomposition(aten.any)
@@ -5079,7 +5071,7 @@ def linspace(
         )
         end = _maybe_convert_to_dtype(end, torch.float64)
 
-    if py_any(isinstance(arg, complex) for arg in (start, end, steps)):
+    if builtins.any(isinstance(arg, complex) for arg in (start, end, steps)):
         default_complex_dtype = utils.corresponding_complex_dtype(
             torch.get_default_dtype()
         )
@@ -5178,7 +5170,7 @@ def logspace(
             )
             end = _maybe_convert_to_dtype(end, dtype)
 
-    if py_any(isinstance(arg, complex) for arg in (start, end, steps)):
+    if builtins.any(isinstance(arg, complex) for arg in (start, end, steps)):
         default_complex_dtype = utils.corresponding_complex_dtype(
             torch.get_default_dtype()
         )
@@ -5213,7 +5205,7 @@ def meshgrid(*tensors: TensorLikeType, indexing: str):
     pass
 
 
-@register_decomposition(aten.meshgrid)
+@register_decomposition(aten.meshgrid)  # type: ignore[misc]
 def meshgrid(
     *tensors: Union[TensorLikeType, List[TensorLikeType], Tuple[TensorLikeType]],
     indexing: str,
@@ -5226,7 +5218,7 @@ def meshgrid(
         tensors = tuple(tensors[0])
 
     torch._check(
-        py_all(isinstance(a, TensorLike) for a in tensors),
+        builtins.all(isinstance(a, TensorLike) for a in tensors),
         lambda: "meshgrid expects its inputs to be tensors",
     )
 
