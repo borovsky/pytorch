@@ -8,7 +8,7 @@
 #include <c10/macros/Macros.h>
 #include <c10/util/ScopeExit.h>
 
-namespace torch::monitor {
+namespace c10::monitor {
 namespace detail {
 class WaitCounterImpl;
 
@@ -33,11 +33,12 @@ class WaitCounterBackendFactoryIf {
       std::string_view key) noexcept = 0;
 };
 
-void registerWaitCounterBackend(std::unique_ptr<WaitCounterBackendFactoryIf>);
+C10_API void registerWaitCounterBackend(
+    std::unique_ptr<WaitCounterBackendFactoryIf>);
 } // namespace detail
 
 // A handle to a wait counter.
-class WaitCounterHandle {
+class C10_API WaitCounterHandle {
  public:
   explicit WaitCounterHandle(std::string_view key);
 
@@ -54,13 +55,13 @@ class WaitCounterHandle {
     }
 
    private:
-    WaitGuard(WaitCounterHandle& handle, c10::SmallVector<intptr_t>&& ctxs)
+    WaitGuard(WaitCounterHandle& handle, SmallVector<intptr_t>&& ctxs)
         : handle_{&handle}, ctxs_{std::move(ctxs)} {}
 
     friend class WaitCounterHandle;
 
     WaitCounterHandle* handle_;
-    c10::SmallVector<intptr_t> ctxs_;
+    SmallVector<intptr_t> ctxs_;
   };
 
   // Starts a waiter
@@ -69,16 +70,16 @@ class WaitCounterHandle {
           std::chrono::steady_clock::now());
   // Stops the waiter. Each start() call should be matched by exactly one stop()
   // call.
-  void stop(c10::SmallVector<intptr_t>&& ctxs);
+  void stop(SmallVector<intptr_t>&& ctxs);
 
  private:
   detail::WaitCounterImpl& impl_;
 };
-} // namespace torch::monitor
+} // namespace c10::monitor
 
 #define STATIC_WAIT_COUNTER(_key)                           \
-  []() -> torch::monitor::WaitCounterHandle& {              \
-    static torch::monitor::WaitCounterHandle handle(#_key); \
+  []() -> ::c10::monitor::WaitCounterHandle& {              \
+    static ::c10::monitor::WaitCounterHandle handle(#_key); \
     return handle;                                          \
   }()
 
