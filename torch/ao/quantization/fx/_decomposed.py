@@ -1,4 +1,3 @@
-# mypy: allow-untyped-decorators
 # mypy: allow-untyped-defs
 import math
 from typing import Optional, Tuple
@@ -100,9 +99,16 @@ def quantize_per_tensor_tensor(
     Same as `quantize_per_tensor` but scale and zero_point are Scalar Tensor instead of
     scalar values
     """
-    assert zero_point.numel() == 1, f"Expecting zero_point tensor to be one element, but received : {zero_point.numel()}"
-    assert scale.numel() == 1, f"Expecting scale tensor to be one element, but received : {scale.numel()}"
-    return quantize_per_tensor(input, scale.item(), zero_point.item(), quant_min, quant_max, dtype)
+    assert (
+        zero_point.numel() == 1
+    ), f"Expecting zero_point tensor to be one element, but received : {zero_point.numel()}"
+    assert (
+        scale.numel() == 1
+    ), f"Expecting scale tensor to be one element, but received : {scale.numel()}"
+    return quantize_per_tensor(
+        input, scale.item(), zero_point.item(), quant_min, quant_max, dtype  # type: ignore[arg-type]
+    )
+
 
 @impl(quantized_decomposed_lib, "quantize_per_tensor.tensor", "Meta")
 def quantize_per_tensor_tensor_meta(
@@ -139,9 +145,21 @@ def quantize_per_tensor_tensor2(
     Same as `quantize_per_tensor` but scale and zero_point are Scalar Tensor instead of
     scalar values
     """
-    assert zero_point.numel() == 1, f"Expecting zero_point tensor to be one element, but received : {zero_point.numel()}"
-    assert scale.numel() == 1, f"Expecting scale tensor to be one element, but received : {scale.numel()}"
-    return quantize_per_tensor(input, scale.item(), zero_point.item(), quant_min.item(), quant_max.item(), dtype)
+    assert (
+        zero_point.numel() == 1
+    ), f"Expecting zero_point tensor to be one element, but received : {zero_point.numel()}"
+    assert (
+        scale.numel() == 1
+    ), f"Expecting scale tensor to be one element, but received : {scale.numel()}"
+    return quantize_per_tensor(
+        input,
+        scale.item(),
+        zero_point.item(),  # type: ignore[arg-type]
+        quant_min.item(),  # type: ignore[arg-type]
+        quant_max.item(),  # type: ignore[arg-type]
+        dtype,
+    )
+
 
 @impl(quantized_decomposed_lib, "quantize_per_tensor.tensor2", "Meta")
 def quantize_per_tensor_tensor2_meta(
@@ -152,7 +170,10 @@ def quantize_per_tensor_tensor2_meta(
         quant_max: torch.Tensor,
         dtype: torch.dtype
 ) -> torch.Tensor:
-    return quantize_per_tensor_tensor_meta(input, scale, zero_point, quant_min, quant_max, dtype)
+    return quantize_per_tensor_tensor_meta(
+        input, scale, zero_point, quant_min, quant_max, dtype  # type: ignore[arg-type]
+    )
+
 
 # Note: quant_min/quant_max/dtype are not used in the operator, but for now it's kept in
 # the signature as metadata for the input Tensor, this might be useful for pattern
@@ -245,9 +266,22 @@ def dequantize_per_tensor_tensor(
     Same as `dequantize_per_tensor` but scale and zero_point are Scalar Tensor instead of
     scalar values
     """
-    assert zero_point.numel() == 1, f"Expecting zero_point tensor to be one element, but received : {zero_point.numel()}"
-    assert scale.numel() == 1, f"Expecting scale tensor to be one element, but received : {scale.numel()}"
-    return dequantize_per_tensor(input, scale.item(), zero_point.item(), quant_min, quant_max, dtype, out_dtype=out_dtype)
+    assert (
+        zero_point.numel() == 1
+    ), f"Expecting zero_point tensor to be one element, but received : {zero_point.numel()}"
+    assert (
+        scale.numel() == 1
+    ), f"Expecting scale tensor to be one element, but received : {scale.numel()}"
+    return dequantize_per_tensor(
+        input,
+        scale.item(),
+        zero_point.item(),  # type: ignore[arg-type]
+        quant_min,
+        quant_max,
+        dtype,
+        out_dtype=out_dtype,
+    )
+
 
 @impl(quantized_decomposed_lib, "dequantize_per_tensor.tensor", "Meta")
 def dequantize_per_tensor_tensor_meta(
@@ -294,7 +328,15 @@ def dequantize_per_tensor_tensor2(
     assert zero_point.numel() == 1, f"Expecting zero_point tensor to be one element, but received : {zero_point.numel()}"
     assert scale.numel() == 1, f"Expecting scale tensor to be one element, but received : {scale.numel()}"
     return dequantize_per_tensor(
-        input, scale.item(), zero_point.item(), quant_min.item(), quant_max.item(), dtype, out_dtype=out_dtype)
+        input,
+        scale.item(),
+        zero_point.item(),  # type: ignore[arg-type]
+        quant_min.item(),  # type: ignore[arg-type]
+        quant_max.item(),  # type: ignore[arg-type]
+        dtype,
+        out_dtype=out_dtype,
+    )
+
 
 @impl(quantized_decomposed_lib, "dequantize_per_tensor.tensor2", "Meta")
 def dequantize_per_tensor_tensor2_meta(
