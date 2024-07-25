@@ -42,7 +42,12 @@ class PointwiseSubgraphLowering(torch.fx.Interpreter):
             "Buffer creation is not supported in this context"
         )
 
-    def call_function(self, target, args, kwargs):
+    def call_function(
+        self,
+        target: torch.fx.node.Target,
+        args: Any,
+        kwargs: Dict[str, Any],
+    ) -> Any:
         from .lowering import lowerings
 
         if target is operator.getitem and isinstance(args[0], (list, tuple, dict)):
@@ -62,9 +67,14 @@ class PointwiseSubgraphLowering(torch.fx.Interpreter):
 
         return lowerings[target](*args, **kwargs)
 
-    def output(self, target, args, kwargs):
+    def output(
+        self,
+        target: torch.fx.node.Target,
+        args: Tuple[torch.fx.node.Argument, ...],
+        kwargs: Dict[str, Any],
+    ) -> None:
         assert len(args) == 1
-        self.graph_outputs = args[0]
+        self.graph_outputs = args[0]  # type: ignore[assignment]
 
 
 @dataclass
