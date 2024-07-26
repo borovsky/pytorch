@@ -8,18 +8,8 @@ import math
 import sys
 import typing
 import warnings
-from typing import (
-    Any,
-    Callable,
-    List,
-    Literal,
-    NoReturn,
-    Optional,
-    Sequence,
-    Set,
-    Tuple,
-    Union,
-)
+from typing import Any, Callable, Literal, NoReturn, Sequence, TypeVar as _TypeVar
+from typing_extensions import Concatenate as _Concatenate, ParamSpec as _ParamSpec
 
 import torch
 import torch._C._onnx as _C_onnx
@@ -31,6 +21,12 @@ from torch.onnx._globals import GLOBALS
 from torch.onnx._internal import _beartype, jit_utils
 from torch.types import Number
 
+if typing.TYPE_CHECKING:
+    from torch.types import Number
+
+_T = _TypeVar("_T")
+_U = _TypeVar("_U")
+_P = _ParamSpec("_P")
 
 # ---------------------------------------------------------------------------------
 # Helper functions
@@ -218,8 +214,9 @@ def _is_packed_list(list_value: Any) -> bool:
     return _is_value(list_value) and list_value.node().kind() == "prim::ListConstruct"
 
 
-@_beartype.beartype
-def parse_args(*arg_descriptors: _ValueDescriptor):
+def parse_args(
+    *arg_descriptors: _ValueDescriptor,
+) -> Callable[[Callable[_Concatenate[_U, _P], _T]], Callable[_Concatenate[_U, _P], _T]]:
     """A decorator which converts args from torch._C.Value to built-in types.
 
     For example:
@@ -247,8 +244,10 @@ def parse_args(*arg_descriptors: _ValueDescriptor):
             "none": the variable is unused
     """
 
-    def decorator(fn):
-        fn._arg_descriptors = arg_descriptors
+    def decorator(
+        fn: Callable[_Concatenate[_U, _P], _T]
+    ) -> Callable[_Concatenate[_U, _P], _T]:
+        fn._arg_descriptors = arg_descriptors  # type: ignore[attr-defined]
 
         @functools.wraps(fn)
         def wrapper(g, *args, **kwargs):

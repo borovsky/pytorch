@@ -3,7 +3,8 @@
 import torch
 import operator
 import warnings
-from typing import Callable, Dict, Iterable
+from typing import Callable, Dict, Iterable, TypeVar as _TypeVar
+from typing_extensions import ParamSpec as _ParamSpec
 
 from torch.fx._symbolic_trace import _assert_is_none
 from torch.fx.experimental.migrate_gradual_types.constraint import ApplyBroadcasting, CalcProduct, \
@@ -18,6 +19,9 @@ from torch.fx.experimental.migrate_gradual_types.util import gen_tensor_dims, ge
 from torch.fx.tensor_type import Dyn, TensorType
 from torch.nn.modules.conv import Conv2d
 from torch.nn.modules.batchnorm import BatchNorm2d
+
+_T = _TypeVar("_T")
+_P = _ParamSpec("_P")
 
 _INFERENCE_RULES: Dict[Target, Callable] = {}
 
