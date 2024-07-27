@@ -1349,6 +1349,19 @@ class GroupedSchedulerNode(BaseSchedulerNode):
     def get_first_name(self) -> str:
         return self.snodes[0].get_name()
 
+    @cache_on_self
+    def get_buffer_names(self) -> Set[str]:
+        return set.union(*[x.get_buffer_names() for x in self.snodes])
+
+    def get_outputs(self) -> List[SchedulerBuffer]:
+        result: List[SchedulerBuffer] = []
+        for node in self.snodes:
+            result.extend(node.get_outputs())
+        return result
+
+    def get_nodes(self) -> Sequence[BaseSchedulerNode]:
+        return self.snodes
+
     @classmethod
     def can_fuse(cls, producer: BaseSchedulerNode, consumer: BaseSchedulerNode) -> bool:
         # GroupedSchedulerNode cannot be fused with another node
