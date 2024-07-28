@@ -8,8 +8,8 @@ import math
 import sys
 import typing
 import warnings
-from typing import Any, Callable, Literal, NoReturn, Sequence, TypeVar as _TypeVar
-from typing_extensions import Concatenate as _Concatenate, ParamSpec as _ParamSpec
+from typing import Any, Callable, Literal, NoReturn, Sequence, TypeVar
+from typing_extensions import Concatenate, ParamSpec
 
 import torch
 import torch._C._onnx as _C_onnx
@@ -24,9 +24,9 @@ from torch.types import Number
 if typing.TYPE_CHECKING:
     from torch.types import Number
 
-_T = _TypeVar("_T")
-_U = _TypeVar("_U")
-_P = _ParamSpec("_P")
+_T = TypeVar("_T")
+_U = TypeVar("_U")
+_P = ParamSpec("_P")
 
 # ---------------------------------------------------------------------------------
 # Helper functions
@@ -216,7 +216,7 @@ def _is_packed_list(list_value: Any) -> bool:
 
 def parse_args(
     *arg_descriptors: _ValueDescriptor,
-) -> Callable[[Callable[_Concatenate[_U, _P], _T]], Callable[_Concatenate[_U, _P], _T]]:
+) -> Callable[[Callable[Concatenate[_U, _P], _T]], Callable[Concatenate[_U, _P], _T]]:
     """A decorator which converts args from torch._C.Value to built-in types.
 
     For example:
@@ -245,8 +245,8 @@ def parse_args(
     """
 
     def decorator(
-        fn: Callable[_Concatenate[_U, _P], _T]
-    ) -> Callable[_Concatenate[_U, _P], _T]:
+        fn: Callable[Concatenate[_U, _P], _T]
+    ) -> Callable[Concatenate[_U, _P], _T]:
         fn._arg_descriptors = arg_descriptors  # type: ignore[attr-defined]
 
         @functools.wraps(fn)
