@@ -566,6 +566,83 @@ static Tensor& bmm_out_mps_impl(const Tensor& batch1, const Tensor& batch2, Tens
   return result;
 }
 
+Tensor& linalg_cholesky_out_mps(const Tensor& A,
+                            bool upper,
+                            Tensor& result) {
+  using namespace mps;
+
+  Tensor status = at::empty({0}, A.options());
+
+  id<MTLBuffer> aBuffer = getMTLBufferStorage(A);
+  id<MTLBuffer> infoBuffer = getMTLBufferStorage(status);
+  id<MTLBuffer> resultBuffer = getMTLBufferStorage(result);
+  MPSStream* mpsStream = getCurrentMPSStream();
+  id<MTLDevice> device = MPSDevice::getInstance()->device();
+
+  dispatch_sync_with_rethrow(mpsStream->queue(), ^() {
+    @autoreleasepool {
+      mpsStream->endKernelCoalescing();
+      id<MTLCommandBuffer> commandBuffer = mpsStream->commandBuffer();
+      uint64_t batchSize = A.size(0)
+      uint64_t aRows = A.size(-2);
+      uint64_t aCols = A.size(-1);
+      uint64_t aElemSize = A.element_size();
+
+
+      MPSMatrixDecompositionCholesky* decomposition = [[[MPSMatrixDecompositionCholesky alloc] initWithDevice:device
+                                                                                                        lower:!upper
+                                                                                                        order:aRows] autorelease];
+      getMPSProfiler().beginProfileKernel(decomposition, "linalg_cholesky_mps", {A, status});
+
+      MPSMatrixDescriptor* sourceMatrixDesc = [MPSMatrixDescriptor matrixDescriptorWithRows:aRows
+                                                                                    columns:aCols
+                                                                                   matrices:batchSize
+                                                                                   rowBytes:aCols * aElemSize
+                                                                                   matrixBytes:aRows * aCols *aElemSize
+                                                                                   datatType:getMPSDataType(A)];
+
+      MPSMatrixDescriptor* resultMatrixDesc = [MPSMatrixDescriptor matrixDescriptorWithRows:aRows
+                                                                                    columns:aCols
+                                                                                   matrices:batchSize
+                                                                                   rowBytes:aCols * aElemSize
+                                                                                   matrixBytes:aRows * aCols *aElemSize
+                                                                                   datatType:getMPSDataType(A)];
+
+      for (const auto i : c10::irange(batchSize)) {
+        const uint64_t batchOffset = i * aRows * aCols;   
+        MPSMatrix* sourceMatrix =
+            [[[MPSMatrix alloc] initWithBuffer:aBuffer
+                                    offset:(A.storage_offset() + batchOffset) * aElemSize
+                                    descriptor:sourceMatrixDesc] autorelease];
+
+        MPSMatrix* resultMatrix =
+            [[[MPSMatrix alloc] initWithBuffer:resultBuffer
+                                    offset:(result.storage_offset() + batchOffset) * aElemSize
+                                    descriptor:resultMatrixDesc] autorelease];
+
+
+        [decomposition encodeToCommandBuffer:commandBuffer
+                                sourceMatrix:sourceMatrix
+                                resultMatrix:resultMatrix
+                                      status:status];
+      }
+      getMPSProfiler().endProfileKernel(decomposition);
+    }
+  });
+  return result;
+}
+
+Tensor& linalg_cholesky_mps(const Tensor& A,
+                             bool upper) {
+    at::native::squareCheckInputs(A, "linalg.cholesky");
+    at::native::checkFloatingOrComplex(A, "linalg.cholesky");
+
+    Tensor result = at::empty_like(A, A.options()); 
+    linalg_cholesky_out_mps(A, upper, result);
+    return result;
+}
+
+
 static Tensor& linalg_solve_triangular_mps_impl(const Tensor& A,
                                                 const Tensor& B,
                                                 bool upper,
