@@ -639,7 +639,10 @@ static void cholesky_kernel_mps(const Tensor& A,
       getMPSProfiler().endProfileKernel(decomposition);
     }
   });
-//  A.copy_(result);
+
+  //This seems a bit dumb. How to do this the same dispatch of MPS kernels instead?
+  auto A_ =  A.tril();
+  A.copy_(A_);
   Tensor zero = at::zeros_like(status, status.options()); 
   status.copy_(zero);
 }
