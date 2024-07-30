@@ -596,7 +596,7 @@ static void cholesky_kernel_mps(const Tensor& A,
 
 
       MPSMatrixDecompositionCholesky* decomposition = [[[MPSMatrixDecompositionCholesky alloc] initWithDevice:device
-                                                                                                        lower:!upper
+                                                                                                        lower:upper
                                                                                                         order:aRows] autorelease];
       getMPSProfiler().beginProfileKernel(decomposition, "linalg_cholesky_mps", {A, status});
 
@@ -622,9 +622,13 @@ static void cholesky_kernel_mps(const Tensor& A,
                                     descriptor:sourceMatrixDesc] autorelease];
 
         MPSMatrix* resultMatrix =
-            [[[MPSMatrix alloc] initWithBuffer:resultBuffer
-                                    offset:(result.storage_offset() + batchOffset) * aElemSize
-                                    descriptor:resultMatrixDesc] autorelease];
+            [[[MPSMatrix alloc] initWithBuffer:aBuffer
+                                    offset:(A.storage_offset() + batchOffset) * aElemSize
+                                    descriptor:sourceMatrixDesc] autorelease];
+//        MPSMatrix* resultMatrix =
+//            [[[MPSMatrix alloc] initWithBuffer:resultBuffer
+//                                    offset:(result.storage_offset() + batchOffset) * aElemSize
+//                                    descriptor:resultMatrixDesc] autorelease];
 
 
         [decomposition encodeToCommandBuffer:commandBuffer
@@ -635,23 +639,12 @@ static void cholesky_kernel_mps(const Tensor& A,
       getMPSProfiler().endProfileKernel(decomposition);
     }
   });
-  A.copy_(result);
+//  A.copy_(result);
   Tensor zero = at::zeros_like(status, status.options()); 
   status.copy_(zero);
 }
 
 REGISTER_DISPATCH(cholesky_stub, &cholesky_kernel_mps);
-
-//Tensor& linalg_cholesky_mps(const Tensor& A,
-//                             bool upper) {
-//    at::native::squareCheckInputs(A, "linalg.cholesky");
-//    at::native::checkFloatingOrComplex(A, "linalg.cholesky");
-//
-//    Tensor result = at::empty_like(A, A.options()); 
-//    linalg_cholesky_out_mps(A, upper, result);
-//    return result;
-//}
-
 
 static Tensor& linalg_solve_triangular_mps_impl(const Tensor& A,
                                                 const Tensor& B,
