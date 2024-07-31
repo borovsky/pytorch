@@ -575,7 +575,7 @@ static void cholesky_kernel_mps(const Tensor& A,
   using namespace mps;
 
   at::native::squareCheckInputs(A, "linalg.cholesky");
-  at::native::checkFloatingOrComplex(A, "linalg.cholesky");
+  TORCH_CHECK(!A.is_complex(), "linalg.cholesky; Not supported for complex yet!");
 
   Tensor result = at::empty_like(A, A.options()); 
 
@@ -641,7 +641,13 @@ static void cholesky_kernel_mps(const Tensor& A,
   });
 
   //This seems a bit dumb. How to do this the same dispatch of MPS kernels instead?
-  auto A_ =  A.tril();
+  Tensor A_;
+  if(upper) {
+    A_ = A.triu();
+  } else {
+    A_ = A.tril();
+  }
+
   A.copy_(A_);
   Tensor zero = at::zeros_like(status, status.options()); 
   status.copy_(zero);
