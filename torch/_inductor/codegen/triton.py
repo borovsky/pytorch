@@ -1694,7 +1694,7 @@ class TritonKernel(SIMDKernel):
         else:
             return self.loads
 
-    def load(self, name: str, index: sympy.Expr):
+    def load(self, name: str, index: sympy.Expr, compute_in_orig_dtype: bool = False):
         var = self.args.input(name)
         indirect_indexing = self.is_indirect_indexing(index)
         original_index = index
@@ -1764,7 +1764,7 @@ class TritonKernel(SIMDKernel):
 
             dtype = V.graph.get_dtype(name)
             if dtype in (torch.float16, torch.bfloat16):
-                line += ".to(tl.float32)"
+                line += ".to(tl.float32)" if not compute_in_orig_dtype else ""
             if dtype == torch.bool and torch.version.hip is None:
                 # Workaround for https://github.com/openai/triton/issues/2151
                 # tl.load returns int8 when loading from pointer to int1
